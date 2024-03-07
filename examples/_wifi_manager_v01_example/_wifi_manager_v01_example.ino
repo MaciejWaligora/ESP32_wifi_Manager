@@ -2,9 +2,9 @@
 
 /*
 *  Initialize WifiManager class, you can provide deafult ssid and pasw
-*  (for access point adn wifi client as constructor arguments) 
+*  (for access point and wifi client as constructor arguments) 
 */
-WIFIManager wifi("MyAccessPint", "MyACPassword", "ClientSSIDname", "CleitnSSIDPassword");
+WIFIManager wifi("MyAccessPoint", "MyACPassword", "ClientSSIDname", "ClientSSIDPassword");
 
 
 /*
