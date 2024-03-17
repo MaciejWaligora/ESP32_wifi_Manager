@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
+#include <Preferences.h>
 
 
 class WIFIManager {
@@ -12,6 +13,7 @@ private:
     String _ac_mode_ssid;
     String _ac_mode_psw;
     WiFiServer* _ac_server;
+    Preferences* _credentials;
     String _ac_response;
     bool _mode = false; // 1 - Access point mode 0 - client mode
     String parseSSID(String body);
@@ -22,10 +24,16 @@ private:
 
 
 public:
-    WIFIManager(String ac_ssid = "ESP32_Network", String ac_psw = "Test1234", String client_ssid = "", String client_psw = "");
+    WIFIManager(String ac_ssid = "ESP32_Network", String ac_psw = "Test1234");
     bool init();
     bool connect(String ssid, String psw);
     bool startAC();
     void acServerLoop();
+    void setPermanentCredentials();
+    String getPermanentSSID();
+    String getPermanentPSW();
+    bool tryConnection();
+    void clearWifiCredentials();
+
 };
 #endif
