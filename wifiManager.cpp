@@ -1,4 +1,5 @@
 #include "wifiManager.h"
+#include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
@@ -6,11 +7,11 @@
 /*
  * Cosntructor assigning config 
 */
-WIFIManager::WIFIManager(String ac_ssid, String ac_psw, String client_ssid, String client_psw){
+WIFIManager::WIFIManager(String ac_ssid, String ac_psw){
     _ac_mode_ssid = ac_ssid;
     _ac_mode_psw = ac_psw;
-    _client_mode_ssid = client_ssid;
-    _client_mode_psw = client_psw;
+    _client_mode_ssid = "";
+    _client_mode_psw = "";
     _ac_response = "";
 };
 /*
@@ -177,15 +178,48 @@ String WIFIManager::addJavaScript(){
     )";
     return output;
 }
-
 bool WIFIManager::init(){
-    _ac_response += buildHTMlTable();
-    _ac_response += addResponseStyle();
-    _ac_response += addJavaScript();
-    startAC();
+    _credentials = new Preferences();
+    _credentials -> begin("credentials", false);
+    Serial.println(getPermanentSSID());
+    Serial.println(getPermanentPSW());
+    if(!tryConnection()){
+        _ac_response += buildHTMlTable();
+        _ac_response += addResponseStyle();
+        _ac_response += addJavaScript();
+        startAC();
+    }
+}
+void WIFIManager::setPermanentCredentials(){
+    _credentials->putString("ssid", _client_mode_ssid);
+    _credentials->putString("psw", _client_mode_psw);
+}
+String WIFIManager::getPermanentSSID(){
+    String ssid = _credentials->getString("ssid", "");
+    return ssid;
+}
+String WIFIManager::getPermanentPSW(){
+    String psw = _credentials->getString("psw", "");
+    return psw;
+}
+void WIFIManager::clearWifiCredentials(){
+    _credentials->putString("ssid","");
+    _credentials->putString("psw","");
+}
+bool WIFIManager::tryConnection(){
+    String ssid = getPermanentSSID();
+    String psw = getPermanentPSW();
+    if(ssid.length() > 0 && psw.length() > 0){
+        return connect(ssid, psw);
+    }else{
+        Serial.println("No default credentails for WIfi, falling back to AC mode");
+        return false;
+    }
 }
 bool WIFIManager::connect(String ssid, String psw){
     _mode = false;
+    int timeout = 0;
+    int output = true;
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
     const char *ssidC = ssid.c_str();
@@ -198,13 +232,25 @@ bool WIFIManager::connect(String ssid, String psw){
     WiFi.begin(ssidC, pswC);
 
     while (WiFi.status() != WL_CONNECTED) {
+        if(timeout > 10000){
+            output = false;
+            break;
+        }
         delay(500);
+        timeout + 500;
         Serial.print(".");
     }
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
+
+    if(output){
+        Serial.println("");
+        Serial.println("WiFi connected");
+        Serial.println("IP address: ");
+        Serial.println(WiFi.localIP());
+    }else{
+        Serial.println("connection unsuccessfull");
+    }
+    
+    return output;
 }
 bool WIFIManager::startAC(){
       if(WiFi.softAP(_ac_mode_ssid.c_str(), _ac_mode_psw.c_str())){
@@ -254,7 +300,9 @@ void WIFIManager::acServerLoop(){
                             client.println();
                             client.println("POST Received: \nSSID:" + _client_mode_ssid + "\n Password:" + _client_mode_psw);
                             client.println();
-                            connect(_client_mode_ssid, _client_mode_psw);
+                            setPermanentCredentials();
+                            Serial.println("Saved new credentails, restarting...");
+                            ESP.restart();
                             break;
                         }else{
                             currentLine = "";

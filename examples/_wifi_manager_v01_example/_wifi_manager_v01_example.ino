@@ -1,10 +1,9 @@
 #include <wifiManager.h>
 
 /*
-*  Initialize WifiManager class, you can provide deafult ssid and pasw
-*  (for access point and wifi client as constructor arguments) 
+*  Initialize WifiManager class, you can provide deafult ssid and pasw (constructor arguments) 
 */
-WIFIManager wifi("MyAccessPoint", "MyACPassword", "ClientSSIDname", "ClientSSIDPassword");
+WIFIManager wifi("MyAccessPoint", "MyACPassword");
 
 
 /*
